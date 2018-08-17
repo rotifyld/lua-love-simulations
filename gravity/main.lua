@@ -4,6 +4,14 @@ author: Dawid Borys
 github: https://github.com/rotifyld
 ]]
 
+--[[ todo
+
+ dt -> fixed update time
+ trace (?)
+
+
+]]
+
 function love.conf(t)
 	t.identity = "save"
 	t.console = true
@@ -13,7 +21,8 @@ function love.load()
 
 	Meteor = require("meteor")
 
-	const = {number = 10, meteorSpeed = 10, meteorR = 5, meteorMass = 10, G = 100000, traceTime = 0.1}
+	const = {number = 10000, meteorSpeed = 1000, meteorMinStartMass = 1, meteorMaxStartMass = 3,
+			 meteorDensity = 0.5, G = 10000, traceTime = 0.1, minMergeDistance = 5}
 
 	canvas = {x = love.graphics.getWidth(), y = love.graphics.getHeight()}
 	meteors  = {}
@@ -29,15 +38,16 @@ function love.update(dt)
 
 	for i, v in pairs(meteors) do
 		for j, u in pairs(meteors) do
-			if i < j then 
-				v:addGravitationalInfluence(u)
-				u:addGravitationalInfluence(v)
+			if i < j then
+				if not v:addGravitationalInfluence(u) then
+					table.remove(meteors, j)
 				end
+			end
 		end
 	end
 
 	for _, v in pairs(meteors) do
-		v:update(dt)
+		v:update(0.01)
 	end
 end
 
