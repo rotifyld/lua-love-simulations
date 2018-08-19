@@ -20,18 +20,30 @@ end
 function love.load()
 
 	Meteor = require("meteor")
+	Trace = require("trace")
 
-	const = {number = 10000, meteorSpeed = 1000, meteorMinStartMass = 1, meteorMaxStartMass = 3,
-			 meteorDensity = 0.5, G = 10000, traceTime = 0.1, minMergeDistance = 5}
+	-- nice results: {number = 1000, meteorSpeed = 1000, meteorMinStartMass = 1, meteorMaxStartMass = 1, meteorDensity = 0.1, G = 10000
+	const = {number = 1000, meteorSpeed = 1000, meteorMinStartMass = 1, meteorMaxStartMass = 1,
+			 meteorDensity = 0.1, G = 300, central = true, centralMass = 30000, meteorWithCentralSpeed = 0.004,
+			 traceTime = 0.2, traceLifespan = 1, traceR = 0.2}
 
 	canvas = {x = love.graphics.getWidth(), y = love.graphics.getHeight()}
 	meteors  = {}
+
+	-- create central meteor
+	if const.central then
+		table.insert(meteors, Meteor(true))
+	end
 
 	-- create meteors
 	for i=1,const.number,1 do
 		table.insert(meteors, Meteor())
 	end
 
+end
+
+function love.keypressed(k)
+	if k == "0" then love.graphics.captureScreenshot("screenshot.png") end
 end
 
 function love.update(dt)
@@ -52,7 +64,7 @@ function love.update(dt)
 end
 
 function love.draw()
-	love.graphics.setBackgroundColor(1, 1, 1)
+	love.graphics.setBackgroundColor(0, 0, 0)
 
 	for _, v in pairs(meteors) do
 		v:draw()
