@@ -4,13 +4,13 @@ author: Dawid Borys
 github: https://github.com/rotifyld
 ]]
 
---[[ todo
+--[[ possible future expantions
 
- - camera movement
- - ifCentral -> velocity(radius) curve
- - improve trace & color mixing
- - implement real values (Sun-Earth, Galaxy)?
- - user API
+[ ] camera movement -> almost, problems w/ resizing
+[ ] ifCentral -> velocity(radius) curve
+[ ] improve trace & color mixing
+[ ] implement real values (Sun-Earth, Galaxy)?
+[ ] user API
 
 ]]
 
@@ -21,13 +21,15 @@ end
 
 function love.load()
 
+	love.window.setMode(0,0, {})
+
+
 	Meteor = require("meteor")
 	CentralMeteor = require("centralMeteor")
 	NonCentralMeteor = require("nonCentralMeteor")
 	Trace = require("trace")
+	require("camera")
 
-	recording = false
-	shot = 0
 
 	--[[ nice results: {number = 1000, G = 10000, meteorDensity = 0.1, meteorMinStartMass = 1, meteorMaxStartMass = 1,
 						central = false, meteorSpeedIfNCentral = 1000]]
@@ -35,7 +37,7 @@ function love.load()
 	{
 		updateStep = 0.01,
 		number = 1000, G = 10000, meteorDensity = 0.1, meteorMinStartMass = 1, meteorMaxStartMass = 1,
-		traceTime = 0.2, traceLifespan = 1, traceR = 0.2,
+		traceTime = 0.2, traceLifespan = 1, traceR = 0.2, cameraAcceleration = 1000, cameraMaxVelocity = 500, zoom = 1.5,
 		central = true, 
 		--[[if central == true ]] centralMass = 3000, meteorSpeedIfCentral = 0.0025,
 		--[[if central == false]] meteorSpeedIfNCentral = 1000,
@@ -43,6 +45,11 @@ function love.load()
 
 	canvas = {x = love.graphics.getWidth(), y = love.graphics.getHeight()}
 	meteors  = {}
+
+	--camera:setPosition(canvas.x / 2, canvas.y / 2)
+
+	recording = false
+	shot = 0
 
 	-- create central meteor
 	if const.central then
@@ -62,9 +69,14 @@ function love.keypressed(k)
 
 	if k == "0" then love.graphics.captureScreenshot(os.time() .. ".png") end
 
+	if k == "w" then camera:scale(2) end
+	if k == "s" then camera:scale(1/2) end
+
 end
 
 function love.update(dt)
+
+	camera:update(const.updateStep)
 
 	if recording then 
 		love.graphics.captureScreenshot(shot .. ".png")
@@ -89,7 +101,9 @@ end
 function love.draw()
 	love.graphics.setBackgroundColor(0, 0, 0)
 
+  	camera:set()
 	for _, v in pairs(meteors) do
 		v:draw()
 	end
+	camera:unset()
 end
