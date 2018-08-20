@@ -1,57 +1,31 @@
 local Meteor = {}
 Meteor.__index = Meteor
 
-setmetatable(Meteor, { __call = function(_, ...) return Meteor.new(...) end })
-
-local function distance(x1, y1, x2, y2) return math.sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2) end
-
-function Meteor.new(central)
-	local self = setmetatable({}, Meteor)
-	
-	if central then
-		self.x = canvas.x / 2
-		self.y = canvas.y / 2
-
-		self.vx = 0
-		self.vy = 0
-
-		self.mass = const.centralMass
-	else
-		local r = love.math.random() * canvas.y / 2 + 50
-		local phi = love.math.random() * 2 * math.pi
-
-		self.x = r * math.cos(phi) + canvas.x / 2
-		self.y = r * math.sin(phi) + canvas.y / 2
-
-		self.mass = const.meteorMinStartMass + love.math.random() * (const.meteorMaxStartMass - const.meteorMinStartMass)
-		
-		if const.central then 	-- if there is a central mass, initial velocity = orbital speed
-			local r = distance(self.x, self.y, canvas.x / 2, canvas.y / 2)
-			local v = ((const.G * const.centralMass) / r) * const.meteorWithCentralSpeed
-			self.vx = (-1) * v * (self.y - (canvas.y/2)) / r
-			self.vy = v * (self.x - (canvas.x/2)) / r
-		else
-			self.vx = (love.math.random() - 0.5) * const.meteorSpeed
-			self.vy = (love.math.random() - 0.5) * const.meteorSpeed
+setmetatable(Meteor, 
+	{
+		__call = function(cls, ...)
+			local self = setmetatable({}, cls)
+			self:new(...)
+			return self
 		end
-	end
+	})
 
-	self.r = (self.mass / const.meteorDensity) ^ (1/5)
+function Meteor:new(central)
 
 	self.alpha = 0
 	self.omega = 0
 
-	self.fx = 0-- gravitational force from the rest of particles
+	-- gravitational force from the rest of particles
+	self.fx = 0
 	self.fy = 0
 
-	self.rgba = {love.math.random(), love.math.random(), love.math.random(), 1} -- todo
+	self.rgba = {love.math.random(), love.math.random(), love.math.random(), 1}
 	
-	-- trace timer
+	-- trace & timer
 	self.traces = {}
 	self.timeMax = const.traceTime
 	self.timeLeft = self.timeMax
 
-	return self
 end
 
 function Meteor:getMass()
@@ -99,6 +73,9 @@ function Meteor:addGravitationalInfluence(meteor)
 	local r = (dx^2 + dy^2)^(1/2)
 
 	if r < (self.r + meteor:getR()) then
+
+		-- IMPACT - simplified calculations of the angular momentum and thus outcome angular speed
+
 		local totalMass = self.mass + meteor:getMass()
 
 		local L1 = (2/5) * self.mass * (self.r ^ 2) * self.omega
@@ -112,17 +89,15 @@ function Meteor:addGravitationalInfluence(meteor)
 		self.vy = (self.vy * self.mass + meteor:getVy() * meteor:getMass()) / totalMass
 
 		self.mass = totalMass
-		self.r = (self.mass / const.meteorDensity) ^ (1/5) 
+		self.r = (self.mass / const.meteorDensity) ^ (1/3) 
 
-		self.omega = (L1 + L2 + L) / ((2/5) * self.mass * (self.r ^ 2))
+		self.omega = self.omega + (L1 + L2 + L) / ((2/5) * self.mass * (self.r ^ 2))
 
 		return false
 	else
 		local force = (const.G * self.mass * meteor:getMass()) / (r^2)
 		local forceX = force * (dx / r)
 		local forceY = force * (dy / r)
-
-	--	print("dx = " .. dx .. "\ndy = "..dy.."\n r = "..r.."\n f = "..force.."\nfx = "..forceX.."\nfy = "..forceY)--debug
 
 		self:addGravitationalForce(forceX, forceY)
 		meteor:addGravitationalForce((-1) * forceX, (-1) * forceY)
@@ -142,7 +117,6 @@ function Meteor:update(dt)
 	for i, v in pairs(self.traces) do
 		if v:update(dt) then table.remove(self.traces, i) end
 	end
-
 
 	-- rotate
 	self.alpha = self.alpha + self.omega * dt
