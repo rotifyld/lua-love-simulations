@@ -1,4 +1,3 @@
-
 require("util")
 
 camera = {}
@@ -7,7 +6,6 @@ camera.y = 0
 camera.vx = 0
 camera.vy = 0
 camera.zoom = 1
-camera.vzoom = 0
 
 function camera:set()
 	love.graphics.push()
@@ -44,19 +42,20 @@ function camera:update(dt)
 	end
 
 	self:move(self.vx * dt, self.vy * dt)
-	
 end
 
+-- moves camera scaled by the zoom (the lower zoom the bigger translation)
 function camera:move(dx, dy)
-	self.x = self.x + (dx or 0)
-	self.y = self.y + (dy or 0)
+	self.x = self.x + (dx or 0) * (1 / self.zoom)
+	self.y = self.y + (dy or 0) * (1 / self.zoom)
 end
 
 function camera:scale(ds)
+	self:move(canvas.x / 2, canvas.y / 2)
+
 	self.zoom = self.zoom * ds
 
-	-- self.x = self.x + canvas.x * (1 - self.zoom) / 2 -- fixme
-	-- self.y = self.y + canvas.y * (1 - self.zoom) / 2
+	self:move(-canvas.x / 2, -canvas.y / 2)
 end
 
 function camera:setPosition(x, y)

@@ -6,12 +6,13 @@ github: https://github.com/rotifyld
 
 --[[ possible future expantions
 
-[ ] camera movement -> almost, problems w/ resizing
+[x] camera movement
 [ ] ifCentral -> velocity(radius) curve
-[ ] improve trace & color mixing
+[~] improve trace & color mixing
 [ ] implement real values (Sun-Earth, Galaxy)?
 [ ] user API
 
+[x] fix problems with angular momentum
 ]]
 
 function love.conf(t)
@@ -37,7 +38,7 @@ function love.load()
 	{
 		updateStep = 0.01,
 		number = 1000, G = 10000, meteorDensity = 0.1, meteorMinStartMass = 1, meteorMaxStartMass = 1,
-		traceTime = 0.2, traceLifespan = 1, traceR = 0.2, cameraAcceleration = 1000, cameraMaxVelocity = 500, zoom = 1.5,
+		traceTime = 0.2, traceLifespan = 1, traceR = 0.2, cameraAcceleration = 1000, cameraMaxVelocity = 500, zoom = 2,
 		central = true, 
 		--[[if central == true ]] centralMass = 3000, meteorSpeedIfCentral = 0.0025,
 		--[[if central == false]] meteorSpeedIfNCentral = 1000,
@@ -45,8 +46,6 @@ function love.load()
 
 	canvas = {x = love.graphics.getWidth(), y = love.graphics.getHeight()}
 	meteors  = {}
-
-	--camera:setPosition(canvas.x / 2, canvas.y / 2)
 
 	recording = false
 	shot = 0
@@ -69,8 +68,8 @@ function love.keypressed(k)
 
 	if k == "0" then love.graphics.captureScreenshot(os.time() .. ".png") end
 
-	if k == "w" then camera:scale(2) end
-	if k == "s" then camera:scale(1/2) end
+	if k == "w" then camera:scale(const.zoom) end
+	if k == "s" then camera:scale(1 / const.zoom) end
 
 end
 

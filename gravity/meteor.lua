@@ -28,44 +28,28 @@ function Meteor:new(central)
 
 end
 
-function Meteor:getMass()
-	return self.mass
-end
+function Meteor:getMass() return self.mass end
 
-function Meteor:getX()
-	return self.x
-end
+function Meteor:getX() return self.x end
 
-function Meteor:getY()
-	return self.y
-end
+function Meteor:getY() return self.y end
 
-function Meteor:getVx()
-	return self.vx
-end
+function Meteor:getVx() return self.vx end
 
-function Meteor:getVy()
-	return self.vy
-end
+function Meteor:getVy() return self.vy end
 
-function Meteor:getR()
-	return self.r
-end
+function Meteor:getR() return self.r end
 
-function Meteor:getMass()
-	return self.mass
-end
+function Meteor:getMass() return self.mass end
 
-function Meteor:getOmega()
-	return self.omega
-end
+function Meteor:getOmega() return self.omega end
+
+function Meteor:getRgba() return self.rgba end
 
 function Meteor:addGravitationalForce(forceX, forceY)
 	self.fx = self.fx + forceX
 	self.fy = self.fy + forceY
 end
-
-
 
 function Meteor:addGravitationalInfluence(meteor)
 	local dx = meteor:getX() - self.x
@@ -74,26 +58,9 @@ function Meteor:addGravitationalInfluence(meteor)
 
 	if r < (self.r + meteor:getR()) then
 
-		-- IMPACT - simplified calculations of the angular momentum and thus outcome angular speed
-
-		local totalMass = self.mass + meteor:getMass()
-
-		local L1 = (2/5) * self.mass * (self.r ^ 2) * self.omega
-		local L2 = (2/5) * meteor:getMass() * (meteor:getR() ^ 2) * meteor:getOmega()
-		local L = dx * (self.mass * self.vy - meteor:getMass() * meteor:getVy()) -
-				  dy * (self.mass * self.vx - meteor:getMass() * meteor:getVx())
-
-		self.x = (self.x * self.mass + meteor:getX() * meteor:getMass()) / totalMass
-		self.y = (self.y * self.mass + meteor:getY() * meteor:getMass()) / totalMass
-		self.vx = (self.vx * self.mass + meteor:getVx() * meteor:getMass()) / totalMass
-		self.vy = (self.vy * self.mass + meteor:getVy() * meteor:getMass()) / totalMass
-
-		self.mass = totalMass
-		self.r = (self.mass / const.meteorDensity) ^ (1/3) 
-
-		self.omega = self.omega + (L1 + L2 + L) / ((2/5) * self.mass * (self.r ^ 2))
-
+		self:impact(meteor, dx, dy, r)
 		return false
+
 	else
 		local force = (const.G * self.mass * meteor:getMass()) / (r^2)
 		local forceX = force * (dx / r)
@@ -103,6 +70,38 @@ function Meteor:addGravitationalInfluence(meteor)
 		meteor:addGravitationalForce((-1) * forceX, (-1) * forceY)
 		return true
 	end
+end
+
+-- simplified calculations of the angular momentum and thus outcome angular speed
+function Meteor:impact(meteor, dx, dy, r)
+
+	local totalMass = self.mass + meteor:getMass()
+
+	-- angular momentum of the more massive body
+	local Lm = 0
+	if self.mass > meteor:getMass() then 
+		Lm = (2/5) * self.mass * (self.r ^ 2) * self.omega
+	else
+		Lm = (2/5) * meteor:getMass() * (meteor:getR() ^ 2) * meteor:getOmega()
+	end
+	
+	-- angular momentum as a result of an impact
+	local Li = dx * (self.mass * self.vy - meteor:getMass() * meteor:getVy())
+			 - dy * (self.mass * self.vx - meteor:getMass() * meteor:getVx())
+
+	self.x = (self.x * self.mass + meteor:getX() * meteor:getMass()) / totalMass
+	self.y = (self.y * self.mass + meteor:getY() * meteor:getMass()) / totalMass
+	self.vx = (self.vx * self.mass + meteor:getVx() * meteor:getMass()) / totalMass
+	self.vy = (self.vy * self.mass + meteor:getVy() * meteor:getMass()) / totalMass
+
+	self.mass = totalMass
+	self.r = (self.mass / const.meteorDensity) ^ (1/3) 
+
+	self.omega = self.omega + (Lm + Li) / ((2/5) * self.mass * (self.r ^ 2))
+
+	for i = 1, 3, 1 do
+		self.rgba[i] = (self.rgba[i] / 2 + meteor:getRgba()[i] / 2 )
+	end 
 end
 
 function Meteor:update(dt)
